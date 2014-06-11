@@ -48,10 +48,8 @@ public class Lada extends IRobotCreateAdapter {
 	 * @throws ConnectionLostException
 	 */
 	public void loop() throws ConnectionLostException {
-		go(500,500);
-		go(1000);
-		stop();
-		SystemClock.sleep(5000);
+		go(100, 100);
+		goStraight(62);
 	}
 
 	public void go(int leftWheelSpeed, int rightWheelSpeed)
@@ -64,11 +62,24 @@ public class Lada extends IRobotCreateAdapter {
 		while (distanceGone < distanceToTravel) {
 			readSensors(SENSORS_DISTANCE);
 			distanceGone = getDistance() + distanceGone;
-			dashboard.log(distanceGone + "");
+			//dashboard.log(distanceGone + "");
 		}
 	}
 	public void stop() throws ConnectionLostException
 	{
 		go(0, 0);
 	}
+	public void goStraight(int desiredDirection) throws ConnectionLostException
+	{
+		if(dashboard.getAzimuth() > desiredDirection)//turnleft
+		{
+			go(80,120);		
+		}
+		if(dashboard.getAzimuth() < desiredDirection)//turnright
+		{
+			go(120,80);		
+		}
+		dashboard.log((int)dashboard.getAzimuth() + "");
+	}
+
 }
