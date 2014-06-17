@@ -71,15 +71,24 @@ public class Lada extends IRobotCreateAdapter {
 	}
 	public void goStraight(int desiredDirection) throws ConnectionLostException
 	{
+		int directionError = 0;
+		int directionErrorFactor = 2;
+		int startSpeed = 500;
+		int wheelSpeedDelta = 0;	
 		if(dashboard.getAzimuth() > desiredDirection)//turnleft
 		{
-			go(80,120);		
+			directionError = (int) Math.abs(desiredDirection - dashboard.getAzimuth());
+			wheelSpeedDelta = directionError * directionErrorFactor;
+			go(startSpeed - wheelSpeedDelta/2, startSpeed + wheelSpeedDelta/2);		
 		}
 		if(dashboard.getAzimuth() < desiredDirection)//turnright
 		{
-			go(120,80);		
+			directionError = (int) Math.abs(desiredDirection - dashboard.getAzimuth());
+			wheelSpeedDelta = directionError * directionErrorFactor;
+			go(startSpeed + wheelSpeedDelta/2, startSpeed - wheelSpeedDelta/2);			
 		}
-		dashboard.log((int)dashboard.getAzimuth() + "");
+		//dashboard.log((int)dashboard.getAzimuth() + "");
 	}
+
 
 }
