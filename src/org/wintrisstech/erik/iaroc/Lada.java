@@ -7,6 +7,8 @@ package org.wintrisstech.erik.iaroc;
 import ioio.lib.api.IOIO;
 import ioio.lib.api.exception.ConnectionLostException;
 
+import java.util.Date;
+
 import org.wintrisstech.sensors.UltraSonicSensors;
 
 import android.os.SystemClock;
@@ -20,8 +22,10 @@ import android.os.SystemClock;
 public class Lada extends IRobotCreateAdapter {
 	private final Dashboard dashboard;
 	public UltraSonicSensors sonar;
-	private boolean justStarting;
-	private boolean looking;
+
+	private RobotState robotState = RobotState.STARTING;
+
+	private long startTime;
 
 	/**
 	 * Constructs a Lada, an amazing machine!
@@ -44,7 +48,6 @@ public class Lada extends IRobotCreateAdapter {
 
 	public void initialize() throws ConnectionLostException {
 		dashboard.log("iAndroid2014 happy version 140427A");
-		justStarting = true;
 	}
 
 	/**
@@ -53,26 +56,53 @@ public class Lada extends IRobotCreateAdapter {
 	 * @throws ConnectionLostException
 	 */
 	public void loop() throws ConnectionLostException {
-		if (justStarting) {
-			//go(-150, 150);
-			justStarting = false;
-			looking = true;
-		}
-		if (looking) {
+		// maze();
+		readSensors(SENSORS_WALL_SIGNAL);
+		int wallSignal = getWallSignal();
+		dashboard.log("wallsignal: " + wallSignal);
 
-			readSensors(SENSORS_WALL_SIGNAL);
-			int wallSignal = getWallSignal();
-			dashboard.log("wallsignal: " + wallSignal);
-			try {
-				Thread.sleep(200);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		readSensors(SENSORS_BUMPS_AND_WHEEL_DROPS);
+		boolean bumping = isBumpLeft() || isBumpRight();
+		dashboard.log("bumping: " + bumping);
+
+		if (bumping) {
+			robotState = RobotState.BUMPING;
 		}
 
-		// goStraight(62);
+		if (robotState == RobotState.STARTING) {
+
+			go(100, 100);
+
+			robotState = RobotState.GOING_FORWARD;
+
+		} else if (robotState == RobotState.BUMPING) {
+
+			go(-100, -100);
+
+			robotState = RobotState.GOING_BACKWARD;
+
+			startTime = System.currentTimeMillis();
+
+		} else if (robotState == RobotState.GOING_BACKWARD
+				&& System.currentTimeMillis() >= startTime + 3000) {
+
+			go(-100, 100);
+
+			robotState = RobotState.TURNING_LEFT;
+
+			startTime = System.currentTimeMillis();
+
+		} else if (robotState == RobotState.TURNING_LEFT
+				&& System.currentTimeMillis() >= startTime + 750) {
+
+			go(100, 100);
+
+			robotState = RobotState.GOING_FORWARD;
+
+		}
 	}
+
+	// goStraight(62);
 
 	public void go(int leftWheelSpeed, int rightWheelSpeed)
 			throws ConnectionLostException {
@@ -113,4 +143,31 @@ public class Lada extends IRobotCreateAdapter {
 		dashboard.log((int) dashboard.getAzimuth() + "");
 	}
 
+	public void maze() throws ConnectionLostException {
+		readSensors(SENSORS_BUMPS_AND_WHEEL_DROPS);
+		if (isBumpRight() && !isBumpLeft()) {
+			driveDirect(300, -300);
+
+			SystemClock.sleep(500);
+			driveDirect(0, 0);
+		}
+		if (isBumpLeft() && !isBumpRight()) {
+			driveDirect(-300, 300);
+
+			SystemClock.sleep(500);
+
+			driveDirect(0, 0);
+
+		}
+		if (isBumpRight() && isBumpLeft()) {
+			driveDirect(-300, -300);
+			SystemClock.sleep(1000);
+			driveDirect(300, -300);
+			SystemClock.sleep(500);
+			driveDirect(300, 300);
+			SystemClock.sleep(1000);
+		}
+		driveDirect(200, 500);
+
+	}
 }
