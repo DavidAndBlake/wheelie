@@ -11,4 +11,6 @@ public enum RobotState {
 	GOING_BACKWARD,
 	BUMPING_LEFT,
 	BUMPING_RIGHT,
+	NEAR_HOME_BASE,
+	HOMING,
 }

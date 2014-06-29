@@ -71,7 +71,7 @@ public class Lada extends IRobotCreateAdapter {
 
 		// maze();
 		newMaze();
-		//dragRace();
+		// dragRace();
 	}
 
 	public void dragRace() throws ConnectionLostException {
@@ -115,99 +115,59 @@ public class Lada extends IRobotCreateAdapter {
 
 	public void checkEnvironment() throws ConnectionLostException {
 
-		readSensors(SENSORS_BUMPS_AND_WHEEL_DROPS);
+		if (robotState != RobotState.HOMING) {
 
-		if (isBumpRight() || isBumpLeft()) {
+			readSensors(SENSORS_BUMPS_AND_WHEEL_DROPS);
 
-			robotState = RobotState.BUMPING_BOTH;
-			dashboard.log("isBumpRight and isBumpLeft");
+			if (isBumpRight() || isBumpLeft()) {
+
+				robotState = RobotState.BUMPING_BOTH;			
+			}
+
+			readSensors(SENSORS_INFRARED_BYTE);
+
+			int infraredByte = getInfraredByte();
+			
+			if (infraredByte == 242) {
+				
+				robotState = RobotState.NEAR_HOME_BASE;
+			}
 		}
-
-		/*else if (isBumpRight()) {
-
-			robotState = RobotState.BUMPING_RIGHT;
-			dashboard.log("isBumpRight");
-		}
-
-		else if (isBumpLeft()) {
-
-			robotState = RobotState.BUMPING_LEFT;
-			dashboard.log("isBumpLeft");
-		}*/
-
 	}
 
 	public void performActionsBasedOnState() throws ConnectionLostException {
 
 		if (robotState == RobotState.STARTING) {
 
-			go(200, 100);
+			go(400, 130);
 
 			robotState = RobotState.GOING_FORWARD;
 
 		} else if (robotState == RobotState.BUMPING_BOTH) {
 
-			go(-150, -150);
+			go(-200, -200);
 
 			robotState = RobotState.GOING_BACKWARD;
 
-			timer = new Timer(500);
+			timer = new Timer(100);
 
-		} else if (robotState == RobotState.BUMPING_RIGHT) {
+		} else if (robotState == RobotState.NEAR_HOME_BASE) {
 
-			go(-100, -200);
-
-			robotState = RobotState.TURNING_LEFT;
-
-			startTime = System.currentTimeMillis();
-
-		} else if (robotState == RobotState.TURNING_LEFT && System.currentTimeMillis() >= 1000) {
-
-			go(300, 300);
-
-			robotState = RobotState.GOING_STRAIGHT_FORWARD;
-
-		} else if (robotState == RobotState.BUMPING_LEFT) {
-
-			go(300, -300);
-
-			robotState = RobotState.TURNING_RIGHT_AFTER_LEFT_BUMP;
-
-			startTime = System.currentTimeMillis();
+			demo(DEMO_COVER_AND_DOCK);
+			
+			robotState = RobotState.HOMING;
 
 		} else if (robotState == RobotState.GOING_BACKWARD && timer.isExpired()) {
 
-			go(300, -300);
+			go(-200, 200);
 
-			robotState = RobotState.TURNING_RIGHT_AFTER_FRONT_BUMP;
+			robotState = RobotState.TURNING_LEFT;
 
-			startTime = System.currentTimeMillis();
+			timer = new Timer(500);
 
-		} else if (robotState == RobotState.TURNING_RIGHT_AFTER_FRONT_BUMP
-				&& System.currentTimeMillis() >= startTime + 250) {
+		} else if (robotState == RobotState.TURNING_LEFT && timer.isExpired()) {
 
-			go(300, 300);
-
-			robotState = RobotState.GOING_STRAIGHT_FORWARD;
-
-		} else if (robotState == RobotState.TURNING_LEFT
-				&& System.currentTimeMillis() >= startTime + 250) {
-
-			go(150, 500);
-
-			robotState = RobotState.GOING_FORWARD;
-
-		} else if (robotState == RobotState.GOING_STRAIGHT_FORWARD
-				&& System.currentTimeMillis() >= startTime + 1000) {
-
-			go(150, 500);
-
-			robotState = RobotState.GOING_FORWARD;
-
-		} else if (robotState == RobotState.TURNING_RIGHT_AFTER_LEFT_BUMP
-				&& System.currentTimeMillis() >= 450) {
-
-			go(150, 500);
+			go(400, 130);
 
 			robotState = RobotState.GOING_FORWARD;
 		}
