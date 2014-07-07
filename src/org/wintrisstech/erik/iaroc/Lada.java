@@ -70,8 +70,40 @@ public class Lada extends IRobotCreateAdapter {
 	public void loop() throws ConnectionLostException {
 
 		// maze();
-		newMaze();
+		// newMaze();
 		// dragRace();
+		claimMineralResources();
+	}
+
+	private void checkEnvironment() throws ConnectionLostException {
+
+		if (robotState != RobotState.HOMING) {
+
+			readSensors(SENSORS_BUMPS_AND_WHEEL_DROPS);
+
+			if (isBumpRight() || isBumpLeft()) {
+
+				robotState = RobotState.BUMPING;
+			}
+		}
+	}
+
+	private void claimMineralResources() throws ConnectionLostException {
+
+		checkEnvironment();
+
+		if (robotState == RobotState.STARTING) {
+
+			robotState = RobotState.GOING_FORWARD;
+
+			go(500, 500);
+
+		} else if (robotState == RobotState.BUMPING) {
+
+			robotState = RobotState.HOMING;
+
+			demo(DEMO_COVER_AND_DOCK);
+		}
 	}
 
 	public void dragRace() throws ConnectionLostException {
@@ -113,49 +145,21 @@ public class Lada extends IRobotCreateAdapter {
 		performActionsBasedOnState();
 	}
 
-	public void checkEnvironment() throws ConnectionLostException {
-
-		if (robotState != RobotState.HOMING) {
-
-			readSensors(SENSORS_BUMPS_AND_WHEEL_DROPS);
-
-			if (isBumpRight() || isBumpLeft()) {
-
-				robotState = RobotState.BUMPING_BOTH;			
-			}
-
-			readSensors(SENSORS_INFRARED_BYTE);
-
-			int infraredByte = getInfraredByte();
-			
-			if (infraredByte == 242) {
-				
-				robotState = RobotState.NEAR_HOME_BASE;
-			}
-		}
-	}
-
 	public void performActionsBasedOnState() throws ConnectionLostException {
 
 		if (robotState == RobotState.STARTING) {
 
-			go(400, 130);
+			go(500, 150);
 
 			robotState = RobotState.GOING_FORWARD;
 
-		} else if (robotState == RobotState.BUMPING_BOTH) {
+		} else if (robotState == RobotState.BUMPING) {
 
 			go(-200, -200);
 
 			robotState = RobotState.GOING_BACKWARD;
 
 			timer = new Timer(100);
-
-		} else if (robotState == RobotState.NEAR_HOME_BASE) {
-
-			demo(DEMO_COVER_AND_DOCK);
-			
-			robotState = RobotState.HOMING;
 
 		} else if (robotState == RobotState.GOING_BACKWARD && timer.isExpired()) {
 
@@ -167,7 +171,7 @@ public class Lada extends IRobotCreateAdapter {
 
 		} else if (robotState == RobotState.TURNING_LEFT && timer.isExpired()) {
 
-			go(400, 130);
+			go(500, 150);
 
 			robotState = RobotState.GOING_FORWARD;
 		}
